@@ -2,3 +2,4 @@
 shell
 *.out
 .vscode/
+*.tar
