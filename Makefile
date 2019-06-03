@@ -8,7 +8,7 @@ ifeq ($(SYSNAME), Darwin)
 	CC=gcc-9
 endif
 
-CFLAGS=-Wpedantic -Wall -Werror -Wextra -std=c89
+CFLAGS=-Wpedantic -Wall -Werror -Wextra -std=c89 -g
 SOURCE_FILES=shell.c parse.c
 
 all: shell
