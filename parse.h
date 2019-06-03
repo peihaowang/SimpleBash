@@ -9,6 +9,8 @@
 #define WHITE_CHARS " \f\n\r\t\v"
 #define SEP_CHARS   " \f\n\r\t\v,()"
 
+#define CAT_CONST_STR(STR1, STR2)   (STR1 STR2)
+
 typedef int         bool;
 #define true        (1)
 #define false       (0)
@@ -20,9 +22,22 @@ typedef int         bool;
  * String Utilities
  *****************************************************************************/
 
-char* strltrim(char* src, char* chars);
-char* strrtrim(char* src, char* chars);
-char* strtrim(char* src, char* chars);
+char* strltrim(char* src, const char* chars);
+char* strrtrim(char* src, const char* chars);
+char* strtrim(char* src, const char* chars);
+
+bool strstartswith(const char* str, const char* tar);
+bool strendswith(const char* str, const char* tar);
+
+/******************************************************************************
+ * Path Utilities
+ *****************************************************************************/
+
+char* path_cat(char* dest, char* src);
+char* path_change_directory(char* path, char* parent, char* target);
+char* path_eliminate_begin_slash(char* path);
+char* path_eliminate_tail_slash(char* path);
+char* path_ensure_tail_slash(char* path);
 
 /******************************************************************************
  * Command Utilities
@@ -33,15 +48,19 @@ typedef struct
     int     argc;
     char*   argv[MAX_ARGC];
 
-    char*   input;
-    char*   output;
+    char    input[BUF_SIZE];
+    char    output[BUF_SIZE];
+    bool    append;
 
 } Command;
 
 typedef struct
 {
-    Command commands[MAX_CMDS];
-    bool    background;
+    int     cmdc;
+    Command cmdv[MAX_CMDS];
+    bool    bg;
 } CommandLine;
+
+void parse_command_line(CommandLine* command_line, char* line);
 
 #endif /* _PARSE_H_ */
