@@ -22,12 +22,22 @@ typedef int         bool;
  * String Utilities
  *****************************************************************************/
 
-char* strltrim(char* src, char* chars);
-char* strrtrim(char* src, char* chars);
-char* strtrim(char* src, char* chars);
+char* strltrim(char* src, const char* chars);
+char* strrtrim(char* src, const char* chars);
+char* strtrim(char* src, const char* chars);
 
 bool strstartswith(const char* str, const char* tar);
 bool strendswith(const char* str, const char* tar);
+
+/******************************************************************************
+ * Path Utilities
+ *****************************************************************************/
+
+char* path_cat(char* dest, char* src);
+char* path_change_directory(char* path, char* parent, char* target);
+char* path_eliminate_begin_slash(char* path);
+char* path_eliminate_tail_slash(char* path);
+char* path_ensure_tail_slash(char* path);
 
 /******************************************************************************
  * Command Utilities

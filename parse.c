@@ -4,7 +4,7 @@
  * String Utilities
  *****************************************************************************/
 
-char* strltrim(char* src, char* chars)
+char* strltrim(char* src, const char* chars)
 {
     char ch;
     while((ch = *src) != '\0'){
@@ -15,7 +15,7 @@ char* strltrim(char* src, char* chars)
     return src;
 }
 
-char* strrtrim(char* src, char* chars)
+char* strrtrim(char* src, const char* chars)
 {
     char* rev = src + strlen(src) - 1;
     while(rev >= src){
@@ -27,7 +27,7 @@ char* strrtrim(char* src, char* chars)
     return src;
 }
 
-char* strtrim(char* src, char* chars)
+char* strtrim(char* src, const char* chars)
 {
     return strrtrim(strltrim(src, chars), chars);
 }
@@ -44,6 +44,48 @@ bool strendswith(const char* str, const char* tar)
     if(pos < 0) return false;
     return strcmp(str + pos, tar) == 0;
 }
+
+/******************************************************************************
+ * Path Utilities
+ *****************************************************************************/
+
+char* path_cat(char* dest, char* src)
+{
+    dest = strrtrim(dest, "/");
+    src = strltrim(dest, "/");
+    return strcat(dest, src);
+}
+
+char* path_change_directory(char* path, char* parent, char* target)
+{
+    parent = path_eliminate_tail_slash(parent);
+    if(strstartswith(path, parent)){
+        target = path_cat(target, path + strlen(parent));
+    }
+    return target;
+}
+
+char* path_eliminate_begin_slash(char* path)
+{
+    return strltrim(path, "/");
+}
+
+char* path_eliminate_tail_slash(char* path)
+{
+    return strrtrim(path, "/");
+}
+
+char* path_ensure_tail_slash(char* path)
+{
+    if(!strendswith(path, "/")){
+        strcat(path, "/");
+    }
+    return path;
+}
+
+/******************************************************************************
+ * Command Utilities
+ *****************************************************************************/
 
 void parse_command_line(CommandLine* command_line, char* line)
 {
