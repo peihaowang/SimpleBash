@@ -18,6 +18,14 @@ shell: shell.c parse.c parse.h
 
 .PHONY: clean submission
 
+test: shell
+	./shell < testcases/test${ID}.in
+
+cmp: shell
+	./shell < testcases/test${ID}.in > testcases/test${ID}.out \
+	&& bash < testcases/test${ID}.in > testcases/test${ID}_std.out \
+	&& cmp testcases/test${ID}_std.out testcases/test${ID}.out
+
 clean:
 	rm -f shell
 
