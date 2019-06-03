@@ -29,5 +29,8 @@ cmp: shell
 clean:
 	rm -f shell
 
+memcheck: shell
+	valgrind -v --tool=memcheck --leak-check=full --track-origins=yes ./shell testcases/test${ID}.in
+
 submission:
 	tar czvf project4.tar .git
