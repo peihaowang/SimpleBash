@@ -108,9 +108,7 @@ void parse_command_line(CommandLine* command_line, char* line)
 
     line = strtrim(line, WHITE_CHARS);
     /* Is background command? */
-    if(strendswith(line, "&")){
-        command_line->bg = true;
-    }
+    command_line->bg = strendswith(line, "&");
     /* Eliminate the end &, after it's handled */
     line = strtrim(line, CAT_CONST_STR(WHITE_CHARS, "&"));
 

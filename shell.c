@@ -30,6 +30,7 @@ typedef struct {
     pid_t pid;
     CommandLine* cmd_ln;
     char* wc;
+    bool available;
 } Job;
 
 typedef struct {
@@ -37,31 +38,112 @@ typedef struct {
     int top;
 } JobList;
 
+void init_job_list(JobList* list)
+{
+    int i;
+    list->data = (Job*)malloc(sizeof(Job) * BUF_SIZE);
+    list->top = -1;
+
+    for (i = 0; i < BUF_SIZE; i++) {
+        (list->data[i]).available = false;
+        (list->data[i]).wc = NULL;
+        (list->data[i]).cmd_ln = NULL;
+        (list->data[i]).pid = -1;
+    }
+}
+
+void append_job_list(JobList* list, pid_t pid, CommandLine* cmd_ln, char* wc)
+{
+    ++list->top;
+
+    (list->data[list->top]).pid = pid;
+    (list->data[list->top]).cmd_ln = cmd_ln;
+    (list->data[list->top]).wc = (char*)malloc(strlen(wc) + 1);
+    (list->data[list->top]).available = true;
+
+    strcpy((list->data[list->top]).wc, wc);
+}
+
+void remove_job_list(JobList* list, int idx)
+{
+    if (list == NULL || idx > list->top || !(list->data[idx]).available) {
+        return;
+    }
+
+    (list->data[idx]).available = false;
+    (list->data[idx]).pid = -1;
+
+    if ((list->data[idx]).wc != NULL) {
+        free((list->data[idx]).wc);
+        (list->data[idx]).wc = NULL;
+    }
+
+    if ((list->data[idx]).wc != NULL) {
+        free((list->data[idx]).wc);
+        (list->data[idx]).wc = NULL;
+    }
+
+    (list->data[idx]).cmd_ln = NULL;
+
+    if (idx != list->top) {
+        return;
+    }
+
+    while (list->top > 0 && (list->data[--list->top]).available == false) { }
+}
+
+void print_job_list(JobList* list)
+{
+    int i;
+
+    for (i = 0; i <= list->top; i++) {
+        Job p = list->data[i];
+
+        if (!p.available) {
+            continue;
+        }
+
+        printf("[%d]%s  %s%*s%s\n", i + 1, "+", "Running", 21, "", "Test");
+
+    }
+
+}
+
+JobList job_list;  /* the job list */
+
 
 /******************************************************************************
  * Utilities
  *****************************************************************************/
-void get_home_path(char* dest)
+/* get username */
+void get_username(char* dest)
 {
     char* user;
+    uid_t uid;
+    struct passwd* pwd;
+    
+    /* get uid */
+    uid = geteuid();
+    /* get user profile */
+    pwd = getpwuid(uid);
+    if (pwd) {
+        user = pwd->pw_name;
+    } else {  /* failed to get username */
+        fprintf(stderr, "%s: cannot find username for UID %u\n", PROGRAM_NAME, (unsigned)uid);
+        exit(EXIT_FAILURE);
+    }
+
+    strcpy(dest, user);
+}
+
+/* get $HOME, e.g. /home/wyh */
+void get_home_path(char* dest)
+{
+    char user[BUF_SIZE];
     char home_path[BUF_SIZE] = "/home/";
 
     /* get username */
-    {
-        uid_t uid;
-        struct passwd* pwd;
-        
-        /* get uid */
-        uid = geteuid();
-        /* get user profile */
-        pwd = getpwuid(uid);
-        if (pwd) {
-            user = pwd->pw_name;
-        } else {  /* failed to get username */
-            fprintf(stderr, "%s: cannot find username for UID %u\n", PROGRAM_NAME, (unsigned)uid);
-            exit(EXIT_FAILURE);
-        }
-    }
+    get_username(user);
 
     /* update home path */
     strcat(home_path, user);
@@ -69,15 +151,38 @@ void get_home_path(char* dest)
     strcpy(dest, home_path);
 }
 
-void alias_home_path(char* dest)
+/* replace $HOME with ~ */
+void alias_home_path(char* dest, char* src)
+{
+    char home_path[BUF_SIZE];
+    char alias_path[BUF_SIZE] = "~/";
 
+    get_home_path(home_path);
+
+    /* replace $HOME with ~ */
+    if (strstartswith(src, home_path)) {
+        path_change_directory(src, home_path, alias_path);
+    }
+
+    strcpy(dest, alias_path);
+}
+
+/* get current working directory where $HOME is replaced by ~ */
+void get_cwd_with_alias_home(char* dest)
+{
+    char cwd[BUF_SIZE];
+    getcwd(cwd, sizeof(cwd));
+    alias_home_path(cwd, cwd);
+
+    strcpy(dest, cwd);
+}
 
 /******************************************************************************
  * Parse and execute commands
  *****************************************************************************/
-bool exec_buildin(Command* cmd)
+bool exec_builtin(Command* cmd)
 {
-    bool buildin = true;
+    bool builtin = true;
     char* command_name;
 
     if (cmd->argc <= 0) {
@@ -88,7 +193,9 @@ bool exec_buildin(Command* cmd)
     if (strcmp(command_name, "cd") == 0) {
         char* dir;
         if (cmd->argc == 1) {
-            dir = getenv("HOME");
+            char home_dir[BUF_SIZE];
+            get_home_path(home_dir);
+            dir = home_dir;
         } else {
             dir = cmd->argv[1];
         }
@@ -107,17 +214,17 @@ bool exec_buildin(Command* cmd)
     } else if (strcmp(command_name, "exit") == 0) {
         exit(EXIT_SUCCESS);
     } else {
-        buildin = false;
+        builtin = false;
     }
 
-    return buildin;
+    return builtin;
 }
 
 void exec_command(Command* cmd)
 {
     if(cmd->argc <= 0) return;
 
-    if(exec_buildin(cmd)){
+    if(exec_builtin(cmd)){
         /* Exit child process */
         exit(EXIT_SUCCESS);
     }else{
@@ -136,7 +243,7 @@ void exec_command(Command* cmd)
             }
         }
 
-        if(execv(command_name, cmd->argv) == -1){
+        if(execv(command_name, cmd->argv) == -1){  /* command not found */
             fprintf(stderr, "%s: command not found\n", cmd->argv[0]);
             exit(EXIT_FAILURE);
         }
@@ -148,8 +255,6 @@ void do_child_process(CommandLine* command_line, int idx, int pfd_input, int pfd
     Command* cmd;
     int pfds[] = {-1, -1};
     bool is_child_proc = false;
-
-    UNUSED(pfd_input);
 
     /* First leave -1 to initialize with the end command */
     if(idx < 0) idx = command_line->cmdc - 1;
@@ -199,48 +304,37 @@ void do_child_process(CommandLine* command_line, int idx, int pfd_input, int pfd
 void handle_line(char* line)
 {
     bool child_process = false;
-    CommandLine command_line;
+    CommandLine* command_line = (CommandLine*)malloc(sizeof(CommandLine));
 
-    parse_command_line(&command_line, line);
+    parse_command_line(command_line, line);
 
-    if (command_line.cmdc > 0) {
-        bool single_buildin = (command_line.cmdc == 1) && exec_buildin(&command_line.cmdv[0]);
+    if (command_line->cmdc > 0) {
+        bool single_builtin = (command_line->cmdc == 1) && exec_builtin(&(command_line->cmdv[0]));
 
-        if (!single_buildin) {
-            /*let pid = libc::fork();
-						child_process = pid == 0;
-						if child_process{
-							self.do_child_process(&mut command_line, -1, -1);
-						}else{
-							self.m_jobs.push(Job::new(pid, command_line.serialize()));
-							if !command_line.m_background{
-								let mut status:i32 = 0;
-								let option = 0;
-								while libc::waitpid(pid, &mut status, option) < 0{
-									//Waiting
-								}
-							}
-						}*/
+        if (!single_builtin) {
             pid_t pid = fork();
             child_process = (pid == 0);
             
             if (child_process) {  /* run in child process */
-                do_child_process(&command_line, -1, -1, -1);
+                do_child_process(command_line, -1, -1, -1);
             } else {
-                /* TODO: push a job to job queue */
-                /* ... */
+                /* push a job to job list */
+                char cwd[BUF_SIZE];
+                get_cwd_with_alias_home(cwd);
+                append_job_list(&job_list, pid, command_line, cwd);
                 
-                if (!command_line.bg) {
+                if (!command_line->bg) {
                     int status = 0;
                     while (waitpid(pid, &status, 0) < 0) {
                         /* waiting */
                     }
                 }
             }
+        } else {  /* in single builtin case */
+            free(command_line);
+            free_command_line(command_line);
         }
     }
-
-    free_command_line(&command_line);
 }
 
 
@@ -249,47 +343,24 @@ void handle_line(char* line)
  *****************************************************************************/
 void print_prompt()
 {
-    char* user;
+    char user[BUF_SIZE];
     char hostname[BUF_SIZE];
     char cwd[BUF_SIZE];
-    char home_path[BUF_SIZE] = "/home/";
-    char path_alias[BUF_SIZE] = "~/";
 
     /* get username */
-    {
-        uid_t uid;
-        struct passwd* pwd;
-        
-        /* get uid */
-        uid = geteuid();
-        /* get user profile */
-        pwd = getpwuid(uid);
-        if (pwd) {
-            user = pwd->pw_name;
-        } else {  /* failed to get username */
-            fprintf(stderr, "%s: cannot find username for UID %u\n", PROGRAM_NAME, (unsigned)uid);
-            exit(EXIT_FAILURE);
-        }
-    }
+    get_username(user);
     /* get hostname */
     gethostname(hostname, sizeof(hostname));
     /* get current working directory */
-    getcwd(cwd, sizeof(cwd));
+    get_cwd_with_alias_home(cwd);
 
-    /* update home path */
-    strcat(home_path, user);
-    /* replace $HOME with ~ */
-    path_change_directory(cwd, home_path, path_alias);
-
-    printf("%s@%s:%s$ ", user, hostname, path_alias);
+    printf("%s@%s:%s$ ", user, hostname, cwd);
 }
 
 
 /******************************************************************************
  * Entrance: main
  *****************************************************************************/
-JobList job_list;
-
 int main(int argc, char* argv[])
 {
     FILE* file;
@@ -297,8 +368,7 @@ int main(int argc, char* argv[])
     char input_line[BUF_SIZE];
 
     /* init job list */
-    job_list.data = (Job*)malloc(sizeof(Job) * BUF_SIZE);
-    job_list.top = 0;
+    init_job_list(&job_list);
 
     /* clear input line */
     memset(input_line, 0, sizeof(input_line));
