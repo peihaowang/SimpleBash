@@ -45,6 +45,20 @@ bool strendswith(const char* str, const char* tar)
     return strcmp(str + pos, tar) == 0;
 }
 
+int strjoin(char* dest, const char* strv[], int strc, const char* sep)
+{
+    int i, len = 0;
+    for(i = 0; i < strc; i++){
+        len += strlen(strv[i]);
+        if(dest != NULL) strcat(dest, strv[i]);
+        if(i != strc - 1){
+            len += strlen(sep);
+            if(dest != NULL) strcat(dest, sep);
+        }
+    }
+    return len;
+}
+
 /******************************************************************************
  * Path Utilities
  *****************************************************************************/
