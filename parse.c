@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "parse.h"
 
 /******************************************************************************
@@ -65,8 +67,8 @@ int strjoin(char* dest, const char* strv[], int strc, const char* sep)
 
 char* path_cat(char* dest, char* src)
 {
-    dest = strrtrim(dest, "/");
-    src = strltrim(dest, "/");
+    dest = path_ensure_tail_slash(dest);
+    src = strltrim(src, "/");
     return strcat(dest, src);
 }
 
@@ -97,6 +99,16 @@ char* path_ensure_tail_slash(char* path)
     return path;
 }
 
+bool path_file_exists(const char* path)
+{
+    FILE* file = fopen(path, "r");
+    if(file != NULL){
+        fclose(file);
+        return true;
+    }
+    return false;
+}
+
 /******************************************************************************
  * Command Utilities
  *****************************************************************************/
@@ -125,9 +137,12 @@ void parse_command_line(CommandLine* command_line, char* line)
     }
     /* Now i equals to the count of arguments */
     command_line->cmdc = i;
+    command_line->cmdv = malloc(sizeof(Command) * i);
     for(i = 0; i < command_line->cmdc; i++){
-        int argc = 0;
         Command* cmd = &command_line->cmdv[i];
+        cmd->argc = 0;
+        cmd->output = NULL;
+        cmd->input = NULL;
 
         /* Traverse each token */
         token = strtok(commands[i], WHITE_CHARS);
@@ -135,23 +150,41 @@ void parse_command_line(CommandLine* command_line, char* line)
             if(strcmp(token, ">") == 0){
                 /* Write */
                 token = strtok(NULL, WHITE_CHARS);
+                cmd->output = malloc(sizeof(char) * (strlen(token) + 1));
                 strcpy(cmd->output, token);
                 cmd->append = false;
             }else if(strcmp(token, ">>") == 0){
                 /* Append */
                 token = strtok(NULL, WHITE_CHARS);
+                cmd->output = malloc(sizeof(char) * (strlen(token) + 1));
                 strcpy(cmd->output, token);
                 cmd->append = true;
             }else if(strcmp(token, "<") == 0){
                 /* Read */
                 token = strtok(NULL, WHITE_CHARS);
+                cmd->input = malloc(sizeof(char) * (strlen(token) + 1));
                 strcpy(cmd->input, token);
                 cmd->append = false;
             }else{
-                strcpy(cmd->argv[argc++], token);
+                cmd->argv[cmd->argc] = malloc(sizeof(char) * (strlen(token) + 1));
+                strcpy(cmd->argv[cmd->argc], token);
+                cmd->argc++;
             }
             token = strtok(NULL, WHITE_CHARS);
         }
-        cmd->argc = argc;
     }
+}
+
+void free_command_line(CommandLine* command_line)
+{
+    int i, j;
+    for(i = 0; i < command_line->cmdc; i++){
+        Command* cmd = &command_line->cmdv[i];
+        if(cmd->input != NULL) free(cmd->input);
+        if(cmd->output != NULL) free(cmd->output);
+        for(j = 0; j < cmd->argc; j++){
+            free(cmd->argv[j]);
+        }
+    }
+    free(command_line->cmdv);
 }
