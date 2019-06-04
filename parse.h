@@ -68,4 +68,6 @@ void parse_command_line(CommandLine* command_line, char* line);
 
 void free_command_line(CommandLine* command_line);
 
+int format_command_line(char* dest, CommandLine* command_line, bool bg);
+
 #endif /* _PARSE_H_ */

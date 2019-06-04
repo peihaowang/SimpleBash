@@ -186,3 +186,48 @@ void free_command_line(CommandLine* command_line)
     }
     free(command_line->cmdv);
 }
+
+int format_command_line(char* dest, CommandLine* command_line, bool bg)
+{
+    int i, len = 0;
+    char** command_strs = malloc(command_line->cmdc * sizeof(char*));
+    for(i = 0; i < command_line->cmdc; i++){
+        Command* cmd = &command_line->cmdv[i];
+        char* cmd_str;
+        int cmd_str_len = strjoin(NULL, (const char**)cmd->argv, cmd->argc, " ");
+        if(cmd->input){
+            /* 3 for ' < ' */
+            cmd_str_len += strlen(cmd->input) + 3;
+        }
+        if(cmd->output){
+            /* 3 for ' > ' */
+            cmd_str_len += strlen(cmd->output) + 3;
+        }
+        cmd_str = malloc(sizeof(char) * (cmd_str_len + 1));
+        strjoin(cmd_str, (const char**)cmd->argv, cmd->argc, " ");
+        if(cmd->input){
+            strcat(cmd_str, " < ");
+            strcat(cmd_str, cmd->input);
+        }
+        if(cmd->output){
+            strcat(cmd_str, " > ");
+            strcat(cmd_str, cmd->output);
+        }
+        command_strs[i] = cmd_str;
+    }
+    len = strjoin(dest, (const char**)command_strs, command_line->cmdc, " | ");
+    for(i = 0; i < command_line->cmdc; i++){
+        free(command_strs[i]);
+    }
+    free(command_strs);
+
+    /* If require the tailing background flag */
+    if(bg && command_line->bg){
+        /* 2 for ' &' */
+        len += 2;
+        if(dest){
+            strcat(dest, " &");
+        }
+    }
+    return len;
+}
