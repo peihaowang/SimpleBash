@@ -40,6 +40,7 @@ char* path_change_directory(char* path, char* parent, char* target);
 char* path_eliminate_begin_slash(char* path);
 char* path_eliminate_tail_slash(char* path);
 char* path_ensure_tail_slash(char* path);
+bool path_file_exists(const char* path);
 
 /******************************************************************************
  * Command Utilities
@@ -47,22 +48,26 @@ char* path_ensure_tail_slash(char* path);
 
 typedef struct
 {
-    int     argc;
-    char*   argv[MAX_ARGC];
+    int             argc;
+    char*           argv[MAX_ARGC];
 
-    char    input[BUF_SIZE];
-    char    output[BUF_SIZE];
-    bool    append;
+    char*           input;
+    char*           output;
+    bool            append;
 
 } Command;
 
 typedef struct
 {
-    int     cmdc;
-    Command cmdv[MAX_CMDS];
-    bool    bg;
+    int             cmdc;
+    Command*        cmdv;
+    bool            bg;
 } CommandLine;
 
 void parse_command_line(CommandLine* command_line, char* line);
+
+void free_command_line(CommandLine* command_line);
+
+int format_command_line(char* dest, CommandLine* command_line, bool bg);
 
 #endif /* _PARSE_H_ */
