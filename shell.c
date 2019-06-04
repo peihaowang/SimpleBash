@@ -85,16 +85,27 @@ bool exec_buildin(Command* cmd)
     
     command_name = cmd->argv[0];
     if (strcmp(command_name, "cd") == 0) {
-        puts("cd");
+        char* dir;
+        if (cmd->argc == 1) {
+            dir = getenv("HOME");
+        } else {
+            dir = cmd->argv[1];
+        }
+        if (chdir(dir) < 0) {
+            fprintf(stderr, "%s: cd: %s: No such file or directory\n", PROGRAM_NAME, dir);
+        }
     } else if (strcmp(command_name, "jobs") == 0) {
         puts("jobs");
     } else if (strcmp(command_name, "kill") == 0) {
         puts("kill");
     } else if (strcmp(command_name, "pwd") == 0) {
-        puts("pwd***");
+        char cwd[BUF_SIZE];
+        getcwd(cwd, sizeof(cwd));
+
+        printf("%s\n", cwd);
     } else if (strcmp(command_name, "exit") == 0) {
-        puts("exit");
-    } else{
+        exit(EXIT_SUCCESS);
+    } else {
         buildin = false;
     }
 
@@ -107,7 +118,7 @@ void exec_command(Command* cmd)
 
     if(exec_buildin(cmd)){
         /* Exit child process */
-        exit(0);
+        exit(EXIT_SUCCESS);
     }else{
         char command_name[BUF_SIZE]; strcpy(command_name, cmd->argv[0]);
         if(strchr(command_name, '/') == NULL){
@@ -124,7 +135,10 @@ void exec_command(Command* cmd)
             }
         }
 
-        execv(command_name, cmd->argv);
+        if(execv(command_name, cmd->argv) == -1){
+            fprintf(stderr, "%s: command not found\n", cmd->argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -253,7 +267,7 @@ void print_prompt()
             user = pwd->pw_name;
         } else {  /* failed to get username */
             fprintf(stderr, "%s: cannot find username for UID %u\n", PROGRAM_NAME, (unsigned)uid);
-            exit (EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
     /* get hostname */
