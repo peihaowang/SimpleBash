@@ -29,6 +29,8 @@ char* strtrim(char* src, const char* chars);
 bool strstartswith(const char* str, const char* tar);
 bool strendswith(const char* str, const char* tar);
 
+int strjoin(char* dest, const char* strv[], int strc, const char* sep);
+
 /******************************************************************************
  * Path Utilities
  *****************************************************************************/
