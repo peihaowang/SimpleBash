@@ -24,52 +24,53 @@ typedef enum {
 
 
 /******************************************************************************
- * Job and job queue
+ * Job and job list
  *****************************************************************************/
-/*typedef struct {
+typedef struct {
     pid_t pid;
-    char* cmd_name;
+    CommandLine* cmd_ln;
+    char* wc;
 } Job;
 
 typedef struct {
     Job* data;
-    JobNode
-} JobNode;
-
-typedef struct {
-    Job* jobs;
-    int tail;
     int top;
-    int capacity;
-} JobQueue;
+} JobList;
 
-void init_job_queue(JobQueue* q, int cap)
+
+/******************************************************************************
+ * Utilities
+ *****************************************************************************/
+void get_home_path(char* dest)
 {
-    q->jobs = (Job*)malloc(sizeof(Job) * cap);
-    q->tail = 0;
-    q->top = 0;
-    q->capacity = cap;
-}
+    char* user;
+    char home_path[BUF_SIZE] = "/home/";
 
-void push_job_queue(JobQueue* q, pid_t pid, char* cmd_name)
-{
-    if (q->top >= q->capacity) {
-        Job* new_mem_ptr = (Job*)malloc(sizeof(Job) * q->capacity * 2);
-        memcpy(new_mem_ptr, q->jobs, sizeof(Job) * q->capacity);
-        free(q->jobs);
-
-        q->capacity *= 2;
-        q->jobs = new_mem_ptr;
+    /* get username */
+    {
+        uid_t uid;
+        struct passwd* pwd;
+        
+        /* get uid */
+        uid = geteuid();
+        /* get user profile */
+        pwd = getpwuid(uid);
+        if (pwd) {
+            user = pwd->pw_name;
+        } else {  /* failed to get username */
+            fprintf(stderr, "%s: cannot find username for UID %u\n", PROGRAM_NAME, (unsigned)uid);
+            exit(EXIT_FAILURE);
+        }
     }
 
-    q->jobs[q->top].pid = pid;
-    q->jobs[q->top].cmd_name = malloc
+    /* update home path */
+    strcat(home_path, user);
+    
+    strcpy(dest, home_path);
 }
 
-void free_job_queue(JobQueue* q)
-{
-    free(q->jobs);
-}*/
+void alias_home_path(char* dest)
+
 
 /******************************************************************************
  * Parse and execute commands
@@ -287,11 +288,17 @@ void print_prompt()
 /******************************************************************************
  * Entrance: main
  *****************************************************************************/
+JobList job_list;
+
 int main(int argc, char* argv[])
 {
     FILE* file;
     ShellMode sh_mode;
     char input_line[BUF_SIZE];
+
+    /* init job list */
+    job_list.data = (Job*)malloc(sizeof(Job) * BUF_SIZE);
+    job_list.top = 0;
 
     /* clear input line */
     memset(input_line, 0, sizeof(input_line));
