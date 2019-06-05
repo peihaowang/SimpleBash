@@ -357,19 +357,19 @@ void exec_command(Command* cmd)
                 env_dir = strtok(NULL, ":");
             }
         }*/
-        char** argv = (char**)malloc(sizeof(char*) * (cmd->argc + 1));
+        /*char** argv = (char**)malloc(sizeof(char*) * (cmd->argc + 1));
         int i;
         for (i = 0; i < cmd->argc; i++) {
             argv[i] = cmd->argv[i];
         }
-        argv[cmd->argc] = NULL;
+        argv[cmd->argc] = NULL;*/
 
-        if (execvp(cmd->argv[0], argv) < 0) {
-            free(argv);
+        if (execvp(cmd->argv[0], cmd->argv) < 0) {
+            /* free(argv); */
             exit(EXIT_FAILURE);
         }
 
-        free(argv);
+        /* free(argv); */
 
        /*  if(execv(command_name, cmd->argv) == -1){
             fprintf(stderr, "%s: command not found\n", cmd->argv[0]);

@@ -173,6 +173,8 @@ void parse_command_line(CommandLine* command_line, char* line)
             }
             token = strtok(NULL, WHITE_CHARS);
         }
+        /* Ending identifier */
+        cmd->argv[cmd->argc] = NULL;
     }
 }
 
