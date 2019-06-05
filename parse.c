@@ -47,15 +47,18 @@ bool strendswith(const char* str, const char* tar)
     return strcmp(str + pos, tar) == 0;
 }
 
-int strjoin(char* dest, const char* strv[], int strc, const char* sep)
+int strjoin(char* dest, char* strv[], int strc, const char* sep)
 {
     int i, len = 0;
+    if (dest != NULL) {
+        dest[0] = '\0';
+    }
     for(i = 0; i < strc; i++){
         len += strlen(strv[i]);
-        if(dest != NULL) strcat(dest, strv[i]);
+        if(dest != NULL) dest = strcat(dest, strv[i]);
         if(i != strc - 1){
             len += strlen(sep);
-            if(dest != NULL) strcat(dest, sep);
+            if(dest != NULL) dest = strcat(dest, sep);
         }
     }
     return len;
@@ -194,7 +197,7 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
     for(i = 0; i < command_line->cmdc; i++){
         Command* cmd = &command_line->cmdv[i];
         char* cmd_str;
-        int cmd_str_len = strjoin(NULL, (const char**)cmd->argv, cmd->argc, " ");
+        int cmd_str_len = strjoin(NULL, cmd->argv, cmd->argc, " ");
         if(cmd->input){
             /* 3 for ' < ' */
             cmd_str_len += strlen(cmd->input) + 3;
@@ -204,7 +207,7 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
             cmd_str_len += strlen(cmd->output) + 3;
         }
         cmd_str = malloc(sizeof(char) * (cmd_str_len + 1));
-        strjoin(cmd_str, (const char**)cmd->argv, cmd->argc, " ");
+        strjoin(cmd_str, cmd->argv, cmd->argc, " ");
         if(cmd->input){
             strcat(cmd_str, " < ");
             strcat(cmd_str, cmd->input);
@@ -215,7 +218,7 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
         }
         command_strs[i] = cmd_str;
     }
-    len = strjoin(dest, (const char**)command_strs, command_line->cmdc, " | ");
+    len = strjoin(dest, command_strs, command_line->cmdc, " | ");
     for(i = 0; i < command_line->cmdc; i++){
         free(command_strs[i]);
     }
