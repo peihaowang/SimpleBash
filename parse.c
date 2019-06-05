@@ -199,11 +199,18 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
         int cmd_str_len = strjoin(NULL, (const char**)cmd->argv, cmd->argc, " ");
         if(cmd->input){
             /* 3 for ' < ' */
-            cmd_str_len += strlen(cmd->input) + 3;
+            cmd_str_len += 3;
+            cmd_str_len += strlen(cmd->input)
         }
         if(cmd->output){
-            /* 3 for ' > ' */
-            cmd_str_len += strlen(cmd->output) + 3;
+            if(cmd->append){
+                /* 4 for ' >> ' */
+                cmd_str_len += 4;
+            }else{
+                /* 3 for ' > ' */
+                cmd_str_len += 3;
+            }
+            cmd_str_len += strlen(cmd->output);
         }
         cmd_str = malloc(sizeof(char) * (cmd_str_len + 1));
         strjoin(cmd_str, (const char**)cmd->argv, cmd->argc, " ");
@@ -212,7 +219,11 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
             strcat(cmd_str, cmd->input);
         }
         if(cmd->output){
-            strcat(cmd_str, " > ");
+            if(cmd->append){
+                strcat(cmd_str, " > ");
+            }else{
+                strcat(cmd_str, " >> ");
+            }
             strcat(cmd_str, cmd->output);
         }
         command_strs[i] = cmd_str;
