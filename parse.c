@@ -201,7 +201,7 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
         if(cmd->input){
             /* 3 for ' < ' */
             cmd_str_len += 3;
-            cmd_str_len += strlen(cmd->input)
+            cmd_str_len += strlen(cmd->input);
         }
         if(cmd->output){
             if(cmd->append){
@@ -221,9 +221,9 @@ int format_command_line(char* dest, CommandLine* command_line, bool bg)
         }
         if(cmd->output){
             if(cmd->append){
-                strcat(cmd_str, " > ");
-            }else{
                 strcat(cmd_str, " >> ");
+            }else{
+                strcat(cmd_str, " > ");
             }
             strcat(cmd_str, cmd->output);
         }

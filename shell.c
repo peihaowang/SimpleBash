@@ -414,9 +414,17 @@ void do_child_process(CommandLine* command_line, int idx, int pfd_input, int pfd
 
         if(output_file){
             /* Ouput redirection */
-            int open_flags = O_RDWR | O_TRUNC | O_CREAT;
+            int open_flags = O_RDWR | O_CREAT;
             int create_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
-            int output_fd = open(output_file, open_flags, create_mode);
+            int output_fd;
+            
+            if (cmd->append) {  /* append mode */
+                open_flags |= O_APPEND;
+            } else {
+                open_flags |= O_TRUNC;
+            }
+
+            output_fd = open(output_file, open_flags, create_mode);
             dup2(output_fd, STDOUT_FILENO);
             close(output_fd);
         }else if(pfd_input >= 0 && pfd_output >= 0){
