@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#define BUF_SIZE    1024
+#define BUF_SIZE    512
 #define MAX_CMDS    100
 #define MAX_ARGC    100
 #define WHITE_CHARS " \f\n\r\t\v"
@@ -29,7 +29,7 @@ char* strtrim(char* src, const char* chars);
 bool strstartswith(const char* str, const char* tar);
 bool strendswith(const char* str, const char* tar);
 
-int strjoin(char* dest, const char* strv[], int strc, const char* sep);
+int strjoin(char* dest, char* strv[], int strc, const char* sep);
 
 /******************************************************************************
  * Path Utilities
