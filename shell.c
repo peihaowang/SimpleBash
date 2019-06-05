@@ -32,7 +32,7 @@ typedef struct {
     char* wc;
     bool available;
     int job_id;
-    int flag;  /* 1 for -, 0 for +*/
+    int flag;  /* 1 for -, 0 for + */
 } Job;
 
 typedef struct {
@@ -182,8 +182,8 @@ void print_job_list(JobList* list)
             continue;
         }
 
-        ended = get_job_status_name(p.pid, stats_name);
-        format_command_line(cmd_str, p.cmd_ln, !ended);
+        ended = get_job_status_name(p.pid, stats_name);  /* whether the process is Done/Exit/Terminated */
+        format_command_line(cmd_str, p.cmd_ln, !ended);  /* get command display name */
 
         printf("[%d]%c  %s%*s%s\n", p.job_id + 1, get_flag_char(p.flag), stats_name, (int)(24 - strlen(stats_name)), "", cmd_str);
 
@@ -264,6 +264,37 @@ void get_cwd_with_alias_home(char* dest)
 /******************************************************************************
  * Parse and execute commands
  *****************************************************************************/
+void kill_process(Command* cmd)
+{
+    int i;
+
+    if (cmd->argc <= 1) {
+        fprintf(stderr, "kill: usage: kill pid");
+
+        return;
+    }
+
+    for (i = 1; i < cmd->argc; i++) {
+        pid_t pid;
+        bool is_job_id;
+        char* arg = cmd->argv[i];
+
+        is_job_id = strstartswith(arg, "%");
+
+        arg = strltrim(arg, "%");  /* trim beginning % */
+        pid = (pid_t)atoi(arg);
+
+        if (is_job_id) {
+            if (pid > job_list.top && !job_list.data[pid - 1].available) {
+                continue;
+            }
+            pid = job_list.data[pid - 1].pid;
+        }
+
+        kill(pid, SIGKILL);
+    }
+}
+
 bool exec_builtin(Command* cmd)
 {
     bool builtin = true;
@@ -289,7 +320,7 @@ bool exec_builtin(Command* cmd)
     } else if (strcmp(command_name, "jobs") == 0) {
         print_job_list(&job_list);
     } else if (strcmp(command_name, "kill") == 0) {
-        puts("kill");
+        kill_process(cmd);
     } else if (strcmp(command_name, "pwd") == 0) {
         char cwd[BUF_SIZE];
         getcwd(cwd, sizeof(cwd));
@@ -333,7 +364,10 @@ void exec_command(Command* cmd)
         }
         argv[cmd->argc] = NULL;
 
-        execvp(cmd->argv[0], argv);
+        if (execvp(cmd->argv[0], argv) < 0) {
+            free(argv);
+            exit(EXIT_FAILURE);
+        }
 
         free(argv);
 

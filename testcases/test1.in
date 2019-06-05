@@ -1,22 +1,9 @@
 sleep 1 &
 sleep 1 &
+sleep 4 &
 sleep 1 &
 sleep 4 &
 sleep 1 &
-sleep 1 &
-sleep 1 &
-sleep 4 &
-sleep 1 &
-sleep 1 &
-sleep 1 &
-sleep 4 &
-sleep 1 &
-sleep 1 &
-sleep 1 &
-sleep 4 &
-echo abc &
 sleep 2
-ls
-pwd
-jobs
+kill %1 %2 %3
 jobs
